@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Web Visula</title>
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <style>
+        /* Basic styling for the body */
+        body {
+            background-color: #181A18;
+            color: #FFFFFF;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Container styling */
+        .container {
+            width: 80%;
+            margin: 0 auto;
+        }
+
+        /* Header styling */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        /* Menu styling */
+        .menu ul {
+            list-style-type: none;
+            padding: 0;
+            text-align: center;
+            background-color: #333;
+        }
+
+        .menu ul li {
+            display: inline;
+            margin: 0 15px;
+        }
+
+        .menu ul li a {
+            text-decoration: none;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            display: inline-block;
+        }
+
+        .menu ul li a:hover {
+            background-color: #575757;
+        }
+
+        /* Content styling */
+        .content {
+            padding: 20px;
+            background-color: #282C28;
+            margin-top: 20px;
+        }
+
+        /* Footer styling */
+        .footer {
+            text-align: center;
+            padding: 10px 0;
+            background-color: #333;
+            margin-top: 20px;
+        }
+
+        /* Player controls styling */
+        .player-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .player-controls button {
+            background-color: #333;
+            color: #FFFFFF;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+
+        .player-controls button:hover {
+            background-color: #575757;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Web Visula</h1>
+        </div>
+        <div class="menu">
+            <ul>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+        <div class="content">
+            <h2>Home</h2>
+            <p>Welcome to Web Visula</p>
+            <div class="player-controls">
+                <!-- Button to connect to Spotify -->
+                <button id="connect-button">Connect to Spotify</button>
+                <!-- Toggle Play button -->
+                <button id="togglePlay" disabled>Toggle Play</button>
+            </div>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 Web Visula</p>
+        </div>
+    </div>
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
+    <script>
+        const clientId = 'c53351f781ac4c05bae3d85f325a3883';
+        const redirectUri = 'https://github.com/bigloosegoose/Web-Visula';
+        const scopes = [
+            'streaming',
+            'user-read-email',
+            'user-read-private',
+            'user-modify-playback-state',
+            'user-read-playback-state'
+        ];
+
+        function getHashParams() {
+            const hashParams = {};
+            let e, r = /([^&;=]+)=?([^&;]*)/g,
+                q = window.location.hash.substring(1);
+            while (e = r.exec(q)) {
+                hashParams[e[1]] = decodeURIComponent(e[2]);
+            }
+            return hashParams;
+        }
+
+        const params = getHashParams();
+        let accessToken = params.access_token;
+
+        if (!accessToken) {
+            document.getElementById('connect-button').addEventListener('click', () => {
+                const authUrl = `https://accounts.spotify.com/authorize?response_type=token&client_id=${clientId}&scope=${encodeURIComponent(scopes.join(' '))}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+                window.location = authUrl;
+            });
+        } else {
+            window.onSpotifyWebPlaybackSDKReady = () => {
+                const player = new Spotify.Player({
+                    name: 'Web Playback SDK Quick Start Player',
+                    getOAuthToken: cb => { cb(accessToken); },
+                    volume: 0.5
+                });
+
+                // Ready
+                player.addListener('ready', ({ device_id }) => {
+                    console.log('Ready with Device ID', device_id);
+                    document.getElementById('togglePlay').disabled = false;
+                });
+
+                // Not Ready
+                player.addListener('not_ready', ({ device_id }) => {
+                    console.log('Device ID has gone offline', device_id);
+                });
+
+                player.addListener('initialization_error', ({ message }) => {
+                    console.error(message);
+                });
+
+                player.addListener('authentication_error', ({ message }) => {
+                    console.error(message);
+                });
+
+                player.addListener('account_error', ({ message }) => {
+                    console.error(message);
+                });
+
+                document.getElementById('togglePlay').onclick = function() {
+                    player.togglePlay().then(() => {
+                        console.log('Toggled playback');
+                    });
+                };
+
+                player.connect();
+            };
+        }
+    </script>
+</body>
+</html>
